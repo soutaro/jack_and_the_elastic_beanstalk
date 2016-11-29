@@ -16,7 +16,7 @@ module JackAndTheElasticBeanstalk
         opts.on("--config-dir=DIR") {|dir| config_dir = Pathname(dir) }
       end.order!(argv)
 
-      command_name = argv.shift
+      command_name = argv.shift || ""
 
       klass = commands[command_name.to_sym]
       if klass

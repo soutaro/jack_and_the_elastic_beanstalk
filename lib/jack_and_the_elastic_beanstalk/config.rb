@@ -13,10 +13,41 @@ module JackAndTheElasticBeanstalk
       app_hash = YAML.load_file(app_yml.to_s)
 
       eb_configs = path.children.each.with_object({}) do |file, acc|
-        acc[file] = file.read if file.extname == ".config"
+        relative_path = file.relative_path_from(path)
+        acc[relative_path] = file.read if file.extname == ".config"
       end
 
-      Config.new(app_hash: app_hash, eb_config: eb_configs)
+      Config.new(app_hash: app_hash, eb_configs: eb_configs)
+    end
+
+    def option_settings(env:, worker:)
+      app_hash[env.to_s][worker.to_s]["option_settings"]
+    end
+
+    def type(env_name)
+      app_hash[env_name.to_s]["type"]
+    end
+
+    def each_config
+      if block_given?
+        eb_configs.each do |path, content|
+          yield path, ERB.new(content).result
+        end
+      else
+        enum_for :each_config
+      end
+    end
+
+    def each_worker(env:)
+      if block_given?
+        app_hash[env.to_s].each do |key, value|
+          if value.key?("type")
+            yield key.to_sym
+          end
+        end
+      else
+        enum_for :each_worker, env: env
+      end
     end
   end
 end

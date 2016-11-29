@@ -4,6 +4,8 @@ require "optparse"
 require "pathname"
 require 'dotenv'
 require "rainbow"
+require "erb"
+require "yaml"
 
 require "jack_and_the_elastic_beanstalk/config"
 require "jack_and_the_elastic_beanstalk/runner"
