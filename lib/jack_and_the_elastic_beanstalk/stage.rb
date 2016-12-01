@@ -20,12 +20,23 @@ module JackAndTheElasticBeanstalk
         worker_dir.mkdir
 
         export_files(dest: worker_dir)
-        prepare_eb_extensions(dir: worker_dir, env: jack_name, worker: worker_name)
+        with_env env: jack_name, worker: worker_name do
+          prepare_eb_extensions(dir: worker_dir, env: jack_name, worker: worker_name)
+        end
 
         runner.chdir worker_dir, &block if block_given?
       end
 
       output_dir.rmtree if delete_after
+    end
+
+    def with_env(env:, worker:)
+      ENV["JEB_ENV"] = env.to_s
+      ENV["JEB_WORKER"] = worker.to_s
+      yield
+    ensure
+      ENV.delete("JEB_ENV")
+      ENV.delete("JEB_WORKER")
     end
 
     def export_files(dest:)
