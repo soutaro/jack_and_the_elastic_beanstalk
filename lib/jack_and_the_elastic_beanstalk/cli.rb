@@ -4,6 +4,8 @@ module JackAndTheElasticBeanstalk
       {
         version: Version,
         stage: Stage,
+        list: List,
+        deploy: Deploy,
       }
     end
 

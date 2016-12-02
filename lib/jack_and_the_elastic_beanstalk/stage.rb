@@ -12,7 +12,7 @@ module JackAndTheElasticBeanstalk
       @runner = runner
     end
 
-    def run(delete_after:, &block)
+    def run(delete_after:)
       output_dir.mkpath
 
       config.each_worker(env: jack_name) do |worker_name|
@@ -24,7 +24,11 @@ module JackAndTheElasticBeanstalk
           prepare_eb_extensions(dir: worker_dir, env: jack_name, worker: worker_name)
         end
 
-        runner.chdir worker_dir, &block if block_given?
+        if block_given?
+          runner.chdir worker_dir do
+            yield worker_name
+          end
+        end
       end
 
       output_dir.rmtree if delete_after
@@ -41,7 +45,15 @@ module JackAndTheElasticBeanstalk
 
     def export_files(dest:)
       files = `git ls-files -z`.split("\x0")
-      FileUtils.copy(files, dest.to_s)
+      files.each do |f|
+        path = Pathname(f)
+        target = dest + path
+        unless target.parent.directory?
+          target.mkpath
+        end
+
+        FileUtils.copy(f, target.to_s)
+      end
     end
 
     def prepare_eb_extensions(dir:, env:, worker:)

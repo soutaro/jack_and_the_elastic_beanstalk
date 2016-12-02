@@ -20,6 +20,18 @@ module JackAndTheElasticBeanstalk
       Config.new(app_hash: app_hash, eb_configs: eb_configs)
     end
 
+    def app_name
+      app_hash["application"]["name"]
+    end
+
+    def region
+      app_hash["application"]["region"]
+    end
+
+    def platform
+      app_hash.dig("application", "platform")
+    end
+
     def option_settings(env:, worker:)
       app_hash[env.to_s][worker.to_s]["option_settings"]
     end

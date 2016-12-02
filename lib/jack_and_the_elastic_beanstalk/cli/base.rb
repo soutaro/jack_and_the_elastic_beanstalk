@@ -16,7 +16,9 @@ module JackAndTheElasticBeanstalk
       end
 
       def runner
-        @runner ||= Runner.new(stdin: stdin, stdout: stdout, stderr: stderr)
+        logger = Logger.new(STDERR)
+        logger.level = Logger::DEBUG
+        @runner ||= Runner.new(stdin: stdin, stdout: stdout, stderr: stderr, logger: logger)
       end
 
       def config
