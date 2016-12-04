@@ -4,4 +4,4 @@ $LOAD_PATH << File.join(__dir__, "../lib")
 require "jack_and_the_elastic_beanstalk"
 
 Dotenv.load
-exit JackAndTheElasticBeanstalk::CLI.run(ARGV)
+JackAndTheElasticBeanstalk::CLI.start(ARGV)

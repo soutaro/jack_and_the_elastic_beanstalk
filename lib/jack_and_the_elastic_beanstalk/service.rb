@@ -20,15 +20,9 @@ module JackAndTheElasticBeanstalk
       end
     end
 
-    def deploy_label
-      runner.chdir source_dir do
-        runner.capture3!("git", "rev-parse", "head").first.chomp + "-" + Time.now.utc.strftime("%Y-%m-%dT%H:%M:%SZ")
-      end
-    end
-
-    def eb_deploy(target_dir:, group:, process:, label:)
+    def eb_deploy(target_dir:, group:, process:)
       runner.chdir target_dir do
-        runner.capture3!("eb", "deploy", env_name(group: group, process: process), "--nohang", "--label", label)
+        runner.capture3!("eb", "deploy", env_name(group: group, process: process), "--nohang")
       end
 
       env = eb.environments.find {|env| env.environment_name == env_name(group: group, process: process) }
@@ -139,6 +133,24 @@ module JackAndTheElasticBeanstalk
         end
       else
         enum_for :each_environment, group: group
+      end
+    end
+
+    def each_group
+      if block_given?
+        regexp = /\Ajeb-(.+)-([^\-]+)\Z/
+
+        eb.environments.group_by {|env|
+          if env.environment_name =~ regexp
+            $1
+          end
+        }.each do |group, envs|
+          if group
+            yield group, envs
+          end
+        end
+      else
+        enum_for :each_group
       end
     end
   end

@@ -138,7 +138,7 @@ module JackAndTheElasticBeanstalk
             raise "Timeout exceeded"
           end
 
-          sleep 10
+          sleep 30
         end
 
         logger.info("jeb::eb") { "Synchronized in #{(Time.now - start).to_i} seconds" }
