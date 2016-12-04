@@ -128,7 +128,7 @@ module JackAndTheElasticBeanstalk
           case st
           when "Ready"
             break
-          when "Updating"
+          when "Updating", "Launching"
             # ok
           else
             raise "Unexpected status: #{st}"
@@ -184,6 +184,21 @@ module JackAndTheElasticBeanstalk
 
           refresh
         end
+      end
+
+      def environment_id
+        data.environment_id
+      end
+
+      def destroy
+        logger.info("jeb::eb") { "Terminating #{environment_name}..." }
+        client.terminate_environment(environment_id: environment_id)
+      end
+
+      def health
+        logger.info("jeb::eb") { "Downloading health data on #{environment_name}..." }
+
+        client.describe_environment_health(environment_id: environment_id, attribute_names: ["All"])
       end
     end
   end

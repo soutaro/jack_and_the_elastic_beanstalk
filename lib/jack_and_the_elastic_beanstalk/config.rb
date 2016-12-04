@@ -21,23 +21,27 @@ module JackAndTheElasticBeanstalk
     end
 
     def app_name
-      app_hash["application"]["name"]
+      app_hash.dig("application", "name")
     end
 
     def region
-      app_hash["application"]["region"]
+      app_hash.dig("application", "region")
     end
 
     def platform
       app_hash.dig("application", "platform")
     end
 
-    def option_settings(env:, worker:)
-      app_hash[env.to_s][worker.to_s]["option_settings"]
+    def configurations
+      app_hash["configurations"]
     end
 
-    def type(env_name)
-      app_hash[env_name.to_s]["type"]
+    def processes(configuration)
+      configurations[configuration].select {|_, value| value["type"] }
+    end
+
+    def process_type(configuration, process)
+      processes(configuration)[process]["type"].to_s
     end
 
     def each_config
@@ -50,15 +54,13 @@ module JackAndTheElasticBeanstalk
       end
     end
 
-    def each_worker(env:)
+    def each_process(configuration)
       if block_given?
-        app_hash[env.to_s].each do |key, value|
-          if value.key?("type")
-            yield key.to_sym
-          end
+        processes(configuration).each do |key, hash|
+          yield key, hash
         end
       else
-        enum_for :each_worker, env: env
+        enum_for :each_process, configuration: configuration
       end
     end
   end
