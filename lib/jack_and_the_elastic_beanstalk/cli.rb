@@ -43,12 +43,19 @@ module JackAndTheElasticBeanstalk
 
     desc "create CONFIGURATION GROUP", "Create new group"
     def create(configuration, group)
-      config.each_process(configuration) do |process, _|
+      config.each_process(configuration) do |process, hash|
         runner.stdout.puts "Creating new environment for #{process}..."
         output_dir do |path|
           service.eb_init(target_dir: path)
           service.stage(target_dir: path, process: process)
           service.eb_create(target_dir: path, configuration: configuration, group: group, process: process)
+        end
+
+        if hash["type"] == "oneoff"
+          runner.stdout.puts "Scaling to 0 (#{process} is a oneoff process)"
+          env = service.each_environment.find {|_, p| p == process }
+          env.set_scale(0)
+          env.synchronize_update
         end
       end
     end
