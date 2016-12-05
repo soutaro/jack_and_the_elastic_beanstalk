@@ -60,7 +60,7 @@ module JackAndTheElasticBeanstalk
           yield key, hash
         end
       else
-        enum_for :each_process, configuration: configuration
+        enum_for :each_process, configuration
       end
     end
   end

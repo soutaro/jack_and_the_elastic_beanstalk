@@ -40,6 +40,10 @@ module JackAndTheElasticBeanstalk
           yield(name)
         end
       end
+
+      def each_in_parallel(array, &block)
+        Parallel.each(array, in_threads: array.size, &block)
+      end
     end
 
     class_option :timeout, type: :numeric, default: 10, desc: "Minutes to timeout for each EB operation"
@@ -49,7 +53,9 @@ module JackAndTheElasticBeanstalk
 
     desc "create CONFIGURATION GROUP", "Create new group"
     def create(configuration, group)
-      config.each_process(configuration) do |process, hash|
+      processes = config.each_process(configuration).to_a
+
+      each_in_parallel(processes) do |process, hash|
         runner.stdout.puts "Creating new environment for #{process}..."
         output_dir do |path|
           service.eb_init(target_dir: path)
@@ -59,7 +65,7 @@ module JackAndTheElasticBeanstalk
 
         if hash["type"] == "oneoff"
           runner.stdout.puts "Scaling to 0 (#{process} is a oneoff process)"
-          env = service.each_environment.find {|_, p| p == process }
+          env = service.each_environment(group: group).find {|_, p| p == process }.first
           env.set_scale(0)
           env.synchronize_update
         end
@@ -68,7 +74,9 @@ module JackAndTheElasticBeanstalk
 
     desc "deploy GROUP", "Deploy to group"
     def deploy(group)
-      service.each_environment(group: group) do |_, process|
+      envs = service.each_environment(group: group).to_a
+
+      each_in_parallel(envs) do |_, process|
         runner.stdout.puts "Deploying to #{process}..."
         output_dir do |path|
           service.eb_init(target_dir: path)
@@ -101,7 +109,8 @@ module JackAndTheElasticBeanstalk
 
       logger.info("jeb::cli") { "Setting environment hash: #{hash.inspect}" }
 
-      service.each_environment(group: group) do |env, p|
+      envs = service.each_environment(group: group)
+      each_in_parallel(envs) do |env, p|
         try_process(p, is: options[:process]) do
           runner.stdout.puts "Updating #{p}'s environment variable..."
           env.synchronize_update do
@@ -113,7 +122,8 @@ module JackAndTheElasticBeanstalk
 
     desc "restart GROUP [PROCESS]", "Restart applications"
     def restart(group, process=nil)
-      service.each_environment(group: group) do |env, p|
+      envs = service.each_environment(group: group)
+      each_in_parallel(envs) do |env, p|
         try_process(p, is: process) do
           runner.stdout.puts "Restarting #{p}..."
           env.synchronize_update do
