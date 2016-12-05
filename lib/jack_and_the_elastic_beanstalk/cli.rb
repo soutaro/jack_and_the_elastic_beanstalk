@@ -6,7 +6,7 @@ module JackAndTheElasticBeanstalk
       end
 
       def runner
-        @runner ||= JackAndTheElasticBeanstalk::Runner.new(stdin: STDIN, stdout: STDOUT, stderr: STDERR)
+        @runner ||= JackAndTheElasticBeanstalk::Runner.new(stdin: STDIN, stdout: STDOUT, stderr: STDERR, logger: logger)
       end
 
       def logger

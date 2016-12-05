@@ -6,7 +6,7 @@ module JackAndTheElasticBeanstalk
     attr_reader :paths
     attr_reader :logger
 
-    def initialize(stdin:, stdout:, stderr:, logger: Logger.new(STDERR))
+    def initialize(stdin:, stdout:, stderr:, logger:)
       @stdin = stdin
       @stdout = stdout
       @stderr = stderr
