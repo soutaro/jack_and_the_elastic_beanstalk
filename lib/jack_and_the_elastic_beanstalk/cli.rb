@@ -180,7 +180,7 @@ module JackAndTheElasticBeanstalk
             instances: ress.instances.map(&:id),
             launch_configurations: ress.launch_configurations.map(&:name),
             load_balancers: ress.load_balancers.map(&:name),
-            queues: ress.queues.map(&:name),
+            queues: ress.queues.map(&:url).reject(&:empty?),
             triggers: ress.triggers.map(&:name)
           }
         end
