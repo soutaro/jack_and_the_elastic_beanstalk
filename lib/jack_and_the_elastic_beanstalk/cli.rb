@@ -34,6 +34,12 @@ module JackAndTheElasticBeanstalk
           yield Pathname(dir)
         end
       end
+
+      def try_process(name, is:)
+        if !is || is == name
+          yield(name)
+        end
+      end
     end
 
     class_option :timeout, type: :numeric, default: 10, desc: "Minutes to timeout for each EB operation"
@@ -75,7 +81,7 @@ module JackAndTheElasticBeanstalk
     desc "printenv GROUP [PROCESS]", "Print environment variables"
     def printenv(group, process=nil)
       service.each_environment(group: group) do |env, p|
-        if !process || p == process
+        try_process(p, is: process) do
           puts "#{p} (#{env.environment_name}):"
           env.env_vars.each do |key, value|
             runner.stdout.puts "  #{key}=#{value}"
@@ -96,7 +102,7 @@ module JackAndTheElasticBeanstalk
       logger.info("jeb::cli") { "Setting environment hash: #{hash.inspect}" }
 
       service.each_environment(group: group) do |env, p|
-        if !options[:process] || p == options[:process]
+        try_process(p, is: options[:process]) do
           runner.stdout.puts "Updating #{p}'s environment variable..."
           env.synchronize_update do
             env.set_env_vars hash
@@ -108,7 +114,7 @@ module JackAndTheElasticBeanstalk
     desc "restart GROUP [PROCESS]", "Restart applications"
     def restart(group, process=nil)
       service.each_environment(group: group) do |env, p|
-        if !process || p == process
+        try_process(p, is: process) do
           runner.stdout.puts "Restarting #{p}..."
           env.synchronize_update do
             env.restart
@@ -120,7 +126,7 @@ module JackAndTheElasticBeanstalk
     desc "destroy GROUP [PROCESS]", "Terminate environments associated to GROUP"
     def destroy(group, process=nil)
       service.each_environment(group: group) do |env, p|
-        if !process || p == process
+        try_process p, is: process do
           runner.stdout.puts "Destroying #{p}: #{env.environment_name}..."
           env.destroy
         end
@@ -130,7 +136,7 @@ module JackAndTheElasticBeanstalk
     desc "status GROUP [PROCESS]", "Print status of environments associated to GROUP"
     def status(group, process=nil)
       service.each_environment(group: group) do |env, p|
-        if !process || p == process
+        try_process p, is: process do
           h = env.health
           ih = h.instances_health
           total = ih.no_data + ih.ok + ih.info + ih.warning + ih.degraded + ih.severe + ih.pending
@@ -172,7 +178,7 @@ module JackAndTheElasticBeanstalk
     desc "scale GROUP PROCESS min max", "Scale instances"
     def scale(group, process, min, max=min)
       service.each_environment(group: group) do |env, p|
-        if p == process
+        try_process p, is: process do
           runner.stdout.puts "Scaling #{group} (#{env.environment_name}) to min=#{min}, max=#{max}..."
           env.synchronize_update do
             env.set_scale(min...max)
@@ -203,7 +209,7 @@ module JackAndTheElasticBeanstalk
       resources = {}
 
       service.each_environment(group: group) do |env, process|
-        if !process_name || process_name == process
+        try_process process, is: process_name do
           ress = env.resources.environment_resources
           resources[process] = {
             environment_name: env.environment_name,
