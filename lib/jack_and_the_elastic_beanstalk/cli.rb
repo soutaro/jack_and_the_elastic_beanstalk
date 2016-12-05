@@ -49,7 +49,7 @@ module JackAndTheElasticBeanstalk
     class_option :timeout, type: :numeric, default: 10, desc: "Minutes to timeout for each EB operation"
     class_option :loglevel, type: :string, enum: ["info", "debug", "error"], default: "error", desc: "Loglevel"
     class_option :jack_dir, type: :string, default: (Pathname.pwd + "jack").to_s, desc: "Directory to app.yml"
-    class_option :source_dir, type: :string, default: __dir__, desc: "Directory for source code"
+    class_option :source_dir, type: :string, default: Pathname.pwd.to_s, desc: "Directory for source code"
 
     desc "create CONFIGURATION GROUP", "Create new group"
     def create(configuration, group)
