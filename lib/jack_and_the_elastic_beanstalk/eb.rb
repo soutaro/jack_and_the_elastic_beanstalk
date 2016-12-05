@@ -200,6 +200,12 @@ module JackAndTheElasticBeanstalk
 
         client.describe_environment_health(environment_id: environment_id, attribute_names: ["All"])
       end
+
+      def resources
+        logger.info("jeb::eb") { "Downloading resources on #{environment_name}..."}
+
+        client.describe_environment_resources(environment_id: environment_id)
+      end
     end
   end
 end

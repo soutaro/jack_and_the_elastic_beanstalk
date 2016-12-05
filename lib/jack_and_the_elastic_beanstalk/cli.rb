@@ -158,5 +158,30 @@ module JackAndTheElasticBeanstalk
         end
       end
     end
+
+    desc "resources GROUP [PROCESS]", "Download resources associated to each environment"
+    def resources(group, process_name=nil)
+      resources = {}
+
+      service.each_environment(group: group) do |env, process|
+        if !process_name || process_name == process
+          ress = env.resources.environment_resources
+          resources[process] = {
+            environment_name: env.environment_name,
+            environment_id: env.environment_id,
+            auto_scaling_groups: ress.auto_scaling_groups.map(&:name),
+            instances: ress.instances.map(&:id),
+            launch_configurations: ress.launch_configurations.map(&:name),
+            load_balancers: ress.load_balancers.map(&:name),
+            queues: ress.queues.map(&:name),
+            triggers: ress.triggers.map(&:name)
+          }
+        end
+      end
+
+      unless resources.empty?
+        runner.stdout.puts JSON.pretty_generate(resources)
+      end
+    end
   end
 end
