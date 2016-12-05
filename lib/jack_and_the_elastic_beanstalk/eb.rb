@@ -118,6 +118,7 @@ module JackAndTheElasticBeanstalk
         yield if block_given?
 
         start = Time.now
+        wait = 1
 
         while true
           refresh
@@ -138,7 +139,8 @@ module JackAndTheElasticBeanstalk
             raise "Timeout exceeded"
           end
 
-          sleep 30
+          sleep wait
+          wait = [wait*2, 30].min
         end
 
         logger.info("jeb::eb") { "Synchronized in #{(Time.now - start).to_i} seconds" }
