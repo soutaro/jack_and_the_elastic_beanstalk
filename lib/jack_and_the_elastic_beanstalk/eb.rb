@@ -206,6 +206,11 @@ module JackAndTheElasticBeanstalk
 
         client.describe_environment_resources(environment_id: environment_id)
       end
+
+      def restart
+        logger.info("jeb::eb") { "Restarting #{environment_name}..." }
+        client.restart_app_server(environment_id: environment_id)
+      end
     end
   end
 end

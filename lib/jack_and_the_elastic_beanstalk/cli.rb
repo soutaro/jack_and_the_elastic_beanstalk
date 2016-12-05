@@ -105,9 +105,16 @@ module JackAndTheElasticBeanstalk
       end
     end
 
-    desc "restart GROUP [PROCESS]", "Restart environments associated to GROUP"
+    desc "restart GROUP [PROCESS]", "Restart applications"
     def restart(group, process=nil)
-
+      service.each_environment(group: group) do |env, p|
+        if !process || p == process
+          runner.stdout.puts "Restarting #{p}..."
+          env.synchronize_update do
+            env.restart
+          end
+        end
+      end
     end
 
     desc "destroy GROUP [PROCESS]", "Terminate environments associated to GROUP"
