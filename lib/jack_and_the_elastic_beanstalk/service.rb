@@ -107,7 +107,7 @@ module JackAndTheElasticBeanstalk
         target_path = dest + f
 
         unless target_path.parent.directory?
-          target_path.mkpath
+          target_path.parent.mkpath
         end
 
         FileUtils.copy(source_path.to_s, target_path.to_s)
