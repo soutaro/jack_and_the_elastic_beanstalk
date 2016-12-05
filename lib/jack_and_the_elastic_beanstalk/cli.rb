@@ -103,7 +103,7 @@ module JackAndTheElasticBeanstalk
     def setenv(group, *args)
       hash = {}
       args.each do |arg|
-        k,v = arg.split("=")
+        k,v = arg.split("=", 2)
         hash[k] = v
       end
 
