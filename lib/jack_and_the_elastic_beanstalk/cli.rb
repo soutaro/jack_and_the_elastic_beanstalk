@@ -134,7 +134,32 @@ module JackAndTheElasticBeanstalk
 
     desc "exec GROUP command...", "Run oneoff command"
     def exec(group, *command)
+      env = service.each_environment(group: group).find {|_, p| p == "oneoff" }&.first
+      if env
+        begin
+          env.synchronize_update do
+            runner.stdout.puts "Starting #{env.environment_name} for oneoff process..."
+            env.set_scale 1
+          end
 
+          output_dir do |path|
+            service.eb_init target_dir: path
+
+            commandline = "cd /var/app/current && sudo -E -u webapp env PATH=$PATH #{command.join(' ')}"
+            out, err = runner.capture3! "eb", "ssh", "-c", commandline
+
+            runner.stdout.print out
+            runner.stderr.print err
+          end
+        ensure
+          env.synchronize_update do
+            runner.stdout.puts "Shutting down #{env.environment_name}..."
+            env.set_scale 0
+          end
+        end
+      else
+        runner.stdout.puts "Could not find environment associated to oneoff process..."
+      end
     end
 
     desc "scale GROUP PROCESS min max", "Scale instances"
