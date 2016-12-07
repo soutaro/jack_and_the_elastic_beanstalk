@@ -86,6 +86,22 @@ module JackAndTheElasticBeanstalk
       end
     end
 
+    desc "stage PROCESS OUTPUT_DIR", "Prepare application to deploy"
+    def stage(process, output_dir)
+      path = Pathname(output_dir)
+
+      if path.directory?
+        runner.stdout.puts "Deleting #{path}..."
+        path.rmtree
+      end
+
+      runner.stdout.puts "Staging for #{process} in #{path}..."
+      
+      path.mkpath
+      service.eb_init target_dir: path
+      service.stage(target_dir: path, process: process)
+    end
+
     desc "printenv GROUP [PROCESS]", "Print environment variables"
     def printenv(group, process=nil)
       service.each_environment(group: group) do |env, p|
