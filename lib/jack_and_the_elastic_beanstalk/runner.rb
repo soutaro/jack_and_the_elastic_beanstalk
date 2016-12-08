@@ -3,7 +3,6 @@ module JackAndTheElasticBeanstalk
     attr_reader :stdin
     attr_reader :stdout
     attr_reader :stderr
-    attr_reader :paths
     attr_reader :logger
 
     def initialize(stdin:, stdout:, stderr:, logger:)
@@ -12,6 +11,16 @@ module JackAndTheElasticBeanstalk
       @stderr = stderr
       @paths = [Pathname.pwd]
       @logger = logger
+    end
+
+    def paths
+      id = "#{inspect}:paths".to_sym
+
+      unless Thread.current[id]
+        Thread.current[id] = @paths.dup
+      end
+
+      Thread.current[id]
     end
 
     def chdir(dir)
