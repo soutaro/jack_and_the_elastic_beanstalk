@@ -41,8 +41,11 @@ module JackAndTheElasticBeanstalk
         end
       end
 
-      def each_in_parallel(array, &block)
-        Parallel.each(array, in_threads: array.size, &block)
+      def each_in_parallel(array)
+        Parallel.each_with_index(array, in_threads: array.size) do |a, index|
+          sleep index*5
+          yield a
+        end
       end
 
       def parse_env_args(args)
