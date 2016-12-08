@@ -131,11 +131,13 @@ module JackAndTheElasticBeanstalk
       end
     end
 
-    desc "setenv GROUP name=var name= ...", "Set environment variables"
-    option :process, type: :string
+    desc "setenv GROUP PROCESS name=var name= ...", "Set environment variables"
     def setenv(group, *args)
-      hash = {}
-      args.each do |arg|
+      process = if args.first !~ /=/
+                  args.shift
+                end
+
+      hash = args.each.with_object({}) do |arg, hash|
         k,v = arg.split("=", 2)
         hash[k] = v
       end
@@ -144,7 +146,7 @@ module JackAndTheElasticBeanstalk
 
       envs = service.each_environment(group: group)
       each_in_parallel(envs) do |env, p|
-        try_process(p, is: options[:process]) do
+        try_process(p, is: process) do
           runner.stdout.puts "Updating #{p}'s environment variable..."
           env.synchronize_update do
             env.set_env_vars hash
