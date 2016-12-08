@@ -55,19 +55,27 @@ module JackAndTheElasticBeanstalk
     def create(configuration, group)
       processes = config.each_process(configuration).to_a
 
-      each_in_parallel(processes) do |process, hash|
-        runner.stdout.puts "Creating new environment for #{process}..."
-        output_dir do |path|
-          service.eb_init(target_dir: path)
+      output_dir do |base_path|
+        processes.each do |process, hash|
+          path = base_path + process
+          runner.stdout.puts "Staging for #{process}..."
           service.stage(target_dir: path, process: process)
-          service.eb_create(target_dir: path, configuration: configuration, group: group, process: process)
         end
 
-        if hash["type"] == "oneoff"
-          runner.stdout.puts "Scaling to 0 (#{process} is a oneoff process)"
-          env = service.each_environment(group: group).find {|_, p| p == process }.first
-          env.set_scale(0)
-          env.synchronize_update
+        each_in_parallel(processes) do |process, hash|
+          runner.stdout.puts "Creating new environment for #{process}..."
+
+          path = base_path + process
+
+          service.eb_init(target_dir: path)
+          service.eb_create(target_dir: path, configuration: configuration, group: group, process: process)
+
+          if hash["type"] == "oneoff"
+            runner.stdout.puts "Scaling to 0 (#{process} is a oneoff process)"
+            env = service.each_environment(group: group).find {|_, p| p == process }.first
+            env.set_scale(0)
+            env.synchronize_update
+          end
         end
       end
     end
@@ -76,11 +84,20 @@ module JackAndTheElasticBeanstalk
     def deploy(group)
       envs = service.each_environment(group: group).to_a
 
-      each_in_parallel(envs) do |_, process|
-        runner.stdout.puts "Deploying to #{process}..."
-        output_dir do |path|
-          service.eb_init(target_dir: path)
+      output_dir do |base_path|
+        envs.each do |_, process|
+          path = base_path + process
+          path.mkpath
+
+          runner.stdout.puts "Staging for #{process}..."
           service.stage(target_dir: path, process: process)
+        end
+
+        each_in_parallel(envs) do |_, process|
+          path = base_path + process
+
+          runner.stdout.puts "Deploying to #{process}..."
+          service.eb_init(target_dir: path)
           service.eb_deploy(target_dir: path, group: group, process: process)
         end
       end
@@ -96,7 +113,7 @@ module JackAndTheElasticBeanstalk
       end
 
       runner.stdout.puts "Staging for #{process} in #{path}..."
-      
+
       path.mkpath
       service.eb_init target_dir: path
       service.stage(target_dir: path, process: process)
