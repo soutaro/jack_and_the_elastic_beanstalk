@@ -44,6 +44,13 @@ module JackAndTheElasticBeanstalk
       def each_in_parallel(array, &block)
         Parallel.each(array, in_threads: array.size, &block)
       end
+
+      def parse_env_args(args)
+        args.each.with_object({}) do |arg, hash|
+          k,v = arg.split("=", 2)
+          hash[k] = v
+        end
+      end
     end
 
     class_option :timeout, type: :numeric, default: 10, desc: "Minutes to timeout for each EB operation"
@@ -51,9 +58,10 @@ module JackAndTheElasticBeanstalk
     class_option :jack_dir, type: :string, default: (Pathname.pwd + "jack").to_s, desc: "Directory to app.yml"
     class_option :source_dir, type: :string, default: Pathname.pwd.to_s, desc: "Directory for source code"
 
-    desc "create CONFIGURATION GROUP", "Create new group"
-    def create(configuration, group)
+    desc "create CONFIGURATION GROUP ENV_VAR=VALUE...", "Create new group"
+    def create(configuration, group, *env_var_args)
       processes = config.each_process(configuration).to_a
+      env_vars = parse_env_args(env_var_args)
 
       output_dir do |base_path|
         processes.each do |process, hash|
@@ -68,7 +76,7 @@ module JackAndTheElasticBeanstalk
           path = base_path + process
 
           service.eb_init(target_dir: path)
-          service.eb_create(target_dir: path, configuration: configuration, group: group, process: process)
+          service.eb_create(target_dir: path, configuration: configuration, group: group, process: process, env_vars: env_vars)
 
           if hash["type"] == "oneoff"
             runner.stdout.puts "Scaling to 0 (#{process} is a oneoff process)"
@@ -137,10 +145,7 @@ module JackAndTheElasticBeanstalk
                   args.shift
                 end
 
-      hash = args.each.with_object({}) do |arg, hash|
-        k,v = arg.split("=", 2)
-        hash[k] = v
-      end
+      hash = parse_env_args(args)
 
       logger.info("jeb::cli") { "Setting environment hash: #{hash.inspect}" }
 

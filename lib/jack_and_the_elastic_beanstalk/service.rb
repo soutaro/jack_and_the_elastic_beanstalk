@@ -29,9 +29,9 @@ module JackAndTheElasticBeanstalk
       env.synchronize_update
     end
 
-    def eb_create(target_dir:, configuration:, group:, process:)
+    def eb_create(target_dir:, configuration:, group:, process:, env_vars:)
       if eb.environments.none? {|env| env.environment_name == env_name(group: group, process: process) }
-        logger.info("jeb::service") { "Creating eb environment..." }
+        logger.info("jeb::service") { "Creating eb environment for #{process} from #{target_dir}..." }
 
         commandline = ["eb", "create", env_name(group: group, process: process), "--nohang", "--scale", "1"]
 
@@ -60,6 +60,11 @@ module JackAndTheElasticBeanstalk
           commandline.concat(["--vpc.elbsubnets", vpc["elbsubnets"].join(",")]) if vpc["elbsubnets"]&.any?
           commandline.concat(["--vpc.publicip"]) if vpc["publicip"]
           commandline.concat(["--vpc.securitygroups", vpc["securitygroups"].join(",")]) if vpc["securitygroups"]&.any?
+        end
+
+        unless env_vars.empty?
+          vars = env_vars.to_a.map {|(k, v)| "#{k}=#{v}" }.join(",")
+          commandline.concat(["--envvars", vars])
         end
 
         runner.chdir target_dir do
