@@ -211,11 +211,33 @@ module JackAndTheElasticBeanstalk
           output_dir do |path|
             service.eb_init target_dir: path
 
+            runner.stdout.puts "Waiting for EB to complete deploy..."
+
+            start = Time.now
+
+            while true
+              sleep 15
+              
+              dirs, _ = runner.capture3! "eb", "ssh", env.environment_name, "-c", "ls /var/app"
+
+              if dirs =~ /ondeck/
+                logger.info("jeb::cli") { "Waiting for deploy..." }
+              end
+              if dirs =~ /current/ && dirs !~ /ondeck/
+                break
+              end
+              if Time.now - start > options[:timeout]*60
+                raise "Timed out for waiting deploy..."
+              end
+            end
+
             commandline = "cd /var/app/current && sudo -E -u webapp env PATH=$PATH #{command.join(' ')}"
-            out, err = runner.capture3! "eb", "ssh", "-c", commandline
+            out, err, status = runner.capture3 "eb", "ssh", env.environment_name, "-c", commandline
 
             runner.stdout.print out
             runner.stderr.print err
+
+            raise status.to_s unless status.success?
           end
         ensure
           env.synchronize_update do
