@@ -213,12 +213,11 @@ module JackAndTheElasticBeanstalk
             service.eb_init target_dir: path
 
             runner.stdout.puts "Waiting for EB to complete deploy..."
+            sleep 30
 
             start = Time.now
 
             while true
-              sleep 15
-
               dirs, _ = runner.capture3! "eb", "ssh", env.environment_name, "-c", "ls /var/app"
 
               if dirs =~ /ondeck/
@@ -230,6 +229,8 @@ module JackAndTheElasticBeanstalk
               if Time.now - start > options[:timeout]*60
                 raise "Timed out for waiting deploy..."
               end
+
+              sleep 15
             end
 
             commandline = "cd /var/app/current && sudo -E -u webapp env PATH=$PATH #{command.join(' ')}"
