@@ -199,6 +199,7 @@ module JackAndTheElasticBeanstalk
     end
 
     desc "exec GROUP command...", "Run oneoff command"
+    option :keep, type: :boolean, default: false, desc: "Keep started oneoff environment"
     def exec(group, *command)
       env = service.each_environment(group: group).find {|_, p| p == "oneoff" }&.first
       if env
@@ -217,7 +218,7 @@ module JackAndTheElasticBeanstalk
 
             while true
               sleep 15
-              
+
               dirs, _ = runner.capture3! "eb", "ssh", env.environment_name, "-c", "ls /var/app"
 
               if dirs =~ /ondeck/
@@ -240,9 +241,11 @@ module JackAndTheElasticBeanstalk
             raise status.to_s unless status.success?
           end
         ensure
-          env.synchronize_update do
-            runner.stdout.puts "Shutting down #{env.environment_name}..."
-            env.set_scale 0
+          unless options[:keep]
+            env.synchronize_update do
+              runner.stdout.puts "Shutting down #{env.environment_name}..."
+              env.set_scale 0
+            end
           end
         end
       else
