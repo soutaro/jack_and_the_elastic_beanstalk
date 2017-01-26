@@ -13,6 +13,8 @@ require "pp"
 require "aws-sdk"
 require "thor"
 require "parallel"
+require "active_support"
+require "active_support/core_ext"
 
 require "jack_and_the_elastic_beanstalk/eb"
 require "jack_and_the_elastic_beanstalk/config"
