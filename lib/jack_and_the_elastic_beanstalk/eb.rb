@@ -140,7 +140,7 @@ module JackAndTheElasticBeanstalk
           case st
           when "Ready"
             break
-          when "Updating", "Launching"
+          when "Updating", "Launching", "Aborting"
             # ok
           else
             raise "Unexpected status: #{st}"
