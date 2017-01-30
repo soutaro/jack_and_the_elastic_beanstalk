@@ -130,6 +130,24 @@ module JackAndTheElasticBeanstalk
       service.stage(target_dir: path, process: process)
     end
 
+    desc "archive PROCESS OUTPUT_PATH", "Prepare application bundle at OUTPUT_PATH"
+    def archive(process, output_path)
+      zip_path = Pathname(output_path)
+
+      Dir.mktmpdir do |dir|
+        dir_path = Pathname(dir)
+
+        runner.stdout.puts "Staging for #{process}..."
+
+        dir_path.mkpath
+        service.stage(target_dir: dir_path, process: process)
+
+        runner.stdout.puts "Making application bundle to #{zip_path}..."
+
+        service.archive(input_dir: dir_path, output_path: zip_path)
+      end
+    end
+
     desc "printenv GROUP [PROCESS]", "Print environment variables"
     def printenv(group, process=nil)
       service.each_environment(group: group) do |env, p|
