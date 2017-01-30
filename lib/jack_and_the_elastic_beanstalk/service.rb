@@ -145,6 +145,8 @@ module JackAndTheElasticBeanstalk
         env.synchronize_update do
           env.deploy(label: label)
         end
+
+        env.ensure_version!(expected_label: label)
       end
     end
 

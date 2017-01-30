@@ -229,6 +229,12 @@ module JackAndTheElasticBeanstalk
         client.update_environment(environment_id: environment_id,
                                   version_label: label)
       end
+
+      def ensure_version!(expected_label:)
+        unless data.version_label == expected_label
+          raise "Unexpected version label: expected=#{expected_label}, actual=#{data.version_label}"
+        end
+      end
     end
   end
 end
