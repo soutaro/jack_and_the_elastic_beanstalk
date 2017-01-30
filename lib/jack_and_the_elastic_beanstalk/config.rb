@@ -36,6 +36,10 @@ module JackAndTheElasticBeanstalk
       app_hash["configurations"]
     end
 
+    def s3_bucket
+      app_hash["s3_bucket"]
+    end
+
     def processes(configuration)
       configurations[configuration].select {|_, value| value["type"] }
     end
