@@ -29,6 +29,17 @@ module JackAndTheElasticBeanstalk
       @environments = nil
     end
 
+    def create_version(s3_bucket:, s3_key:, label:)
+      client.create_application_version(application_name: application_name,
+                                        description: label,
+                                        version_label: label,
+                                        source_bundle: {
+                                          s3_bucket: s3_bucket,
+                                          s3_key: s3_key,
+                                        },
+                                        process: true)
+    end
+
     class Environment
       attr_reader :application_name
       attr_reader :logger
@@ -212,6 +223,11 @@ module JackAndTheElasticBeanstalk
       def restart
         logger.info("jeb::eb") { "Restarting #{environment_name}..." }
         client.restart_app_server(environment_id: environment_id)
+      end
+
+      def deploy(label:)
+        client.update_environment(environment_id: environment_id,
+                                  version_label: label)
       end
     end
   end

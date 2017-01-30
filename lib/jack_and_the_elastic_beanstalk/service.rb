@@ -129,6 +129,25 @@ module JackAndTheElasticBeanstalk
       end
     end
 
+    def upload(archive_path:, name:)
+      logger.debug("jeb::service") { "Uploading #{archive_path} to #{config.s3_bucket}/#{name}..." }
+      s3 = Aws::S3::Client.new(region: config.region)
+      archive_path.open do |io|
+        s3.put_object(bucket: config.s3_bucket, key: name, body: io)
+      end
+    end
+
+    def deploy(group:, process:, archive_path:, s3_key:, label:)
+      upload(archive_path: archive_path, name: s3_key)
+      eb.create_version(s3_bucket: config.s3_bucket, s3_key: s3_key, label: label)
+
+      eb.environments.find {|env| env.environment_name == env_name(group: group, process: process) }.try do |env|
+        env.synchronize_update do
+          env.deploy(label: label)
+        end
+      end
+    end
+
     def destroy(group:)
       logger.info("jeb::service") { "Destroying #{group} ..." }
 

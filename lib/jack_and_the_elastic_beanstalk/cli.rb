@@ -95,21 +95,37 @@ module JackAndTheElasticBeanstalk
     def deploy(group)
       envs = service.each_environment(group: group).to_a
 
+      prefix = Time.now.utc.iso8601
+
       output_dir do |base_path|
+        archives = {}
+
         envs.each do |_, process|
           path = base_path + process
           path.mkpath
 
           runner.stdout.puts "Staging for #{process}..."
           service.stage(target_dir: path, process: process)
+
+          name = "#{group}-#{prefix}-#{process}"
+          key = "#{config.app_name}/#{name}"
+
+          archive_path = base_path + "#{name}.zip"
+          service.archive(input_dir: path, output_path: archive_path)
+
+          archives[process] = [key, name, archive_path]
         end
 
         each_in_parallel(envs) do |_, process|
-          path = base_path + process
-
           runner.stdout.puts "Deploying to #{process}..."
-          service.eb_init(target_dir: path)
-          service.eb_deploy(target_dir: path, group: group, process: process)
+
+          s3_key, label, archive_path = archives[process]
+
+          service.deploy(group: group,
+                         process: process,
+                         archive_path: archive_path,
+                         s3_key: s3_key,
+                         label: label)
         end
       end
     end
