@@ -30,4 +30,5 @@ Gem::Specification.new do |spec|
   spec.add_runtime_dependency "thor", "~> 0.19"
   spec.add_runtime_dependency "parallel", "~> 1.10"
   spec.add_runtime_dependency "activesupport", "~> 5.0"
+  spec.add_runtime_dependency "rubyzip", "~> 1.2"
 end
