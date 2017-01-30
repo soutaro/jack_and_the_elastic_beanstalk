@@ -100,6 +100,16 @@ module JackAndTheElasticBeanstalk
       ENV.delete("JEB_PROCESS")
     end
 
+    def archive(input_dir:, output_path:)
+      paths = Pathname.glob(input_dir + "**/*", File::FNM_DOTMATCH).select(&:file?)
+
+      Zip::File.open(output_path.to_s, Zip::File::CREATE) do |zip|
+        paths.each do |path|
+          zip.add(path.relative_path_from(input_dir).to_s, path.to_s)
+        end
+      end
+    end
+
     def export_files(dest:)
       files = runner.chdir(source_dir) do
         runner.capture3!("git", "ls-files", "-z").first.split("\x0")
