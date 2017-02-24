@@ -18,6 +18,7 @@ module JackAndTheElasticBeanstalk
       def eb
         @eb ||= JackAndTheElasticBeanstalk::EB.new(application_name: config.app_name, logger: logger, client: client).tap do |eb|
           eb.timeout = options[:timeout] * 60
+          eb.keep_versions = options[:keep_versions]
         end
       end
 
@@ -60,6 +61,7 @@ module JackAndTheElasticBeanstalk
     class_option :loglevel, type: :string, enum: ["info", "debug", "error"], default: "error", desc: "Loglevel"
     class_option :jack_dir, type: :string, default: (Pathname.pwd + "jack").to_s, desc: "Directory to app.yml"
     class_option :source_dir, type: :string, default: Pathname.pwd.to_s, desc: "Directory for source code"
+    class_option :keep_versions, type: :numeric, default: 100, desc: "Number of application versions to keep"
 
     desc "create CONFIGURATION GROUP ENV_VAR=VALUE...", "Create new group"
     def create(configuration, group, *env_var_args)
