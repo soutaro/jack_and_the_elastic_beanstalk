@@ -47,12 +47,14 @@ module JackAndTheElasticBeanstalk
     end
 
     def cleanup_versions
-      return if application_versions.count < keep_versions
-      application_versions[keep_versions..-1].each do |version|
+      old_application_versions = application_versions[keep_versions..-1]
+      return 0 unless old_application_versions
+      old_application_versions.each do |version|
         client.delete_application_version(application_name: application_name,
                                           version_label: version.version_label,
                                           delete_source_bundle: true)
       end
+      old_application_versions.count
     end
 
     class Environment

@@ -343,5 +343,11 @@ module JackAndTheElasticBeanstalk
         runner.stdout.puts JSON.pretty_generate(resources)
       end
     end
+
+    desc "cleanup", "Cleanup old application versions"
+    def cleanup
+      deleted_count = eb.cleanup_versions
+      runner.stdout.puts "Cleanup #{deleted_count} versions."
+    end
   end
 end
