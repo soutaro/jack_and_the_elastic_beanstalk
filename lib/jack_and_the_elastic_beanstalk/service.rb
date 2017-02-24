@@ -148,6 +148,8 @@ module JackAndTheElasticBeanstalk
 
         env.ensure_version!(expected_label: label)
       end
+
+      eb.cleanup_versions
     end
 
     def destroy(group:)

@@ -4,6 +4,7 @@ module JackAndTheElasticBeanstalk
     attr_reader :logger
     attr_reader :client
     attr_accessor :timeout
+    attr_accessor :keep_versions
 
     def initialize(application_name:, logger:, client:)
       @application_name = application_name
@@ -11,6 +12,7 @@ module JackAndTheElasticBeanstalk
       @client = client
       @env_stack = []
       @timeout = 600
+      @keep_versions = 100
     end
 
     def environments
@@ -29,6 +31,10 @@ module JackAndTheElasticBeanstalk
       @environments = nil
     end
 
+    def application_versions
+      @application_versions = client.describe_application_versions(application_name: application_name).application_versions.sort_by { |v| v.date_updated }.reverse
+    end
+
     def create_version(s3_bucket:, s3_key:, label:)
       client.create_application_version(application_name: application_name,
                                         description: label,
@@ -38,6 +44,17 @@ module JackAndTheElasticBeanstalk
                                           s3_key: s3_key,
                                         },
                                         process: true)
+    end
+
+    def cleanup_versions
+      old_application_versions = application_versions[keep_versions..-1]
+      return 0 unless old_application_versions
+      old_application_versions.each do |version|
+        client.delete_application_version(application_name: application_name,
+                                          version_label: version.version_label,
+                                          delete_source_bundle: true)
+      end
+      old_application_versions.count
     end
 
     class Environment
