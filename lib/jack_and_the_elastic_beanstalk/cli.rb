@@ -349,5 +349,10 @@ module JackAndTheElasticBeanstalk
       deleted_count = eb.cleanup_versions
       runner.stdout.puts "Cleanup #{deleted_count} versions."
     end
+
+    desc "version", "Print version"
+    def version
+      puts VERSION
+    end
   end
 end
