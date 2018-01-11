@@ -25,7 +25,7 @@ module JackAndTheElasticBeanstalk
         runner.capture3!("eb", "deploy", env_name(group: group, process: process), "--nohang")
       end
 
-      env = eb.environments.find {|env| env.environment_name == env_name(group: group, process: process) }
+      env = eb.environments.find {|e| e.environment_name == env_name(group: group, process: process) }
       env.synchronize_update
     end
 
@@ -72,7 +72,7 @@ module JackAndTheElasticBeanstalk
         end
 
         eb.refresh
-        env = eb.environments.find {|env| env.environment_name == env_name(group: group, process: process) }
+        env = eb.environments.find {|e| e.environment_name == env_name(group: group, process: process) }
         env.synchronize_update
       else
         logger.info("jeb::service") { "Environment #{env_name(group:group, process: process)} already exists..." }
