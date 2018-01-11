@@ -80,7 +80,7 @@ module JackAndTheElasticBeanstalk
     end
 
     def env_name(group:, process:)
-      "jeb-#{group}-#{process}"
+      "jeb-#{config.app_name}-#{group}-#{process}"
     end
 
     def stage(target_dir:, process:)
@@ -162,7 +162,7 @@ module JackAndTheElasticBeanstalk
 
     def each_environment(group:)
       if block_given?
-        regexp = /\Ajeb-#{group}-([^\-]+)\Z/
+        regexp = /\Ajeb-#{config.app_name}-#{group}-([^\-]+)\Z/
 
         eb.environments.each do |env|
           if env.environment_name =~ regexp
@@ -176,7 +176,7 @@ module JackAndTheElasticBeanstalk
 
     def each_group
       if block_given?
-        regexp = /\Ajeb-(.+)-([^\-]+)\Z/
+        regexp = /\Ajeb-#{config.app_name}-(.+)-([^\-]+)\Z/
 
         eb.environments.group_by {|env|
           if env.environment_name =~ regexp
