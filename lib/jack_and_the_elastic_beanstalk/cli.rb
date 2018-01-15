@@ -236,6 +236,7 @@ module JackAndTheElasticBeanstalk
 
     desc "exec GROUP command...", "Run oneoff command"
     option :keep, type: :boolean, default: false, desc: "Keep started oneoff environment"
+    option :docker, type: :boolean, default: false, desc: "Run command in Docker container"
     def exec(group, *command)
       env = service.each_environment(group: group).find {|_, p| p == "oneoff" }&.first
       if env
@@ -269,7 +270,11 @@ module JackAndTheElasticBeanstalk
               sleep 15
             end
 
-            commandline = "cd /var/app/current && sudo -E -u webapp env PATH=$PATH #{command.join(' ')}"
+            commandline = if options[:docker]
+                            "sudo docker ps --filter=ancestor=aws_beanstalk/current-app --latest --format='{{.ID}}' | xargs -I{} sudo docker exec {} #{command.join(' ')}"
+                          else
+                            "cd /var/app/current && sudo -E -u webapp env PATH=$PATH #{command.join(' ')}"
+                          end
             out, err, status = runner.capture3 "eb", "ssh", env.environment_name, "-c", commandline
 
             runner.stdout.print out
