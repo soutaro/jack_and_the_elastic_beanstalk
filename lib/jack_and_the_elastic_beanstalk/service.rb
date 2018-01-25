@@ -111,9 +111,15 @@ module JackAndTheElasticBeanstalk
     end
 
     def export_files(dest:)
-      files = runner.chdir(source_dir) do
-        runner.capture3!("git", "ls-files", "-z").first.split("\x0")
-      end
+      files = if (runner.pwd + '.git').exist?
+                runner.chdir(source_dir) do
+                  runner.capture3!("git", "ls-files", "-z").first.split("\x0")
+                end
+              else
+                Pathname.glob(source_dir + '**/*').select(&:file?).map do |path|
+                  path.to_s.sub(/\A#{source_dir}\//, '')
+                end
+              end
 
       files.each do |f|
         logger.debug("jeb::service") { "Copying #{f} ..."}
