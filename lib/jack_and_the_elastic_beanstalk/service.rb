@@ -111,7 +111,7 @@ module JackAndTheElasticBeanstalk
     end
 
     def export_files(dest:)
-      files = if (runner.pwd + '.git').exist?
+      files = if (source_dir + '.git').exist?
                 runner.chdir(source_dir) do
                   runner.capture3!("git", "ls-files", "-z").first.split("\x0")
                 end
