@@ -247,40 +247,42 @@ module JackAndTheElasticBeanstalk
           end
 
           output_dir do |path|
-            service.eb_init target_dir: path
+            runner.chdir(path) do
+              service.eb_init target_dir: path
 
-            runner.stdout.puts "Waiting for EB to complete deploy..."
-            sleep 30
+              runner.stdout.puts "Waiting for EB to complete deploy..."
+              sleep 30
 
-            start = Time.now
+              start = Time.now
 
-            while true
-              dirs, _ = runner.capture3! "eb", "ssh", env.environment_name, "-c", "ls /var/app"
+              while true
+                dirs, _ = runner.capture3! "eb", "ssh", env.environment_name, "-c", "ls /var/app"
 
-              if dirs =~ /ondeck/
-                logger.info("jeb::cli") { "Waiting for deploy..." }
+                if dirs =~ /ondeck/
+                  logger.info("jeb::cli") { "Waiting for deploy..." }
+                end
+                if dirs =~ /current/ && dirs !~ /ondeck/
+                  break
+                end
+                if Time.now - start > options[:timeout]*60
+                  raise "Timed out for waiting deploy..."
+                end
+
+                sleep 15
               end
-              if dirs =~ /current/ && dirs !~ /ondeck/
-                break
-              end
-              if Time.now - start > options[:timeout]*60
-                raise "Timed out for waiting deploy..."
-              end
 
-              sleep 15
+              commandline = if options[:docker]
+                              "sudo docker ps --filter=ancestor=aws_beanstalk/current-app --latest --format='{{.ID}}' | xargs -I{} sudo docker exec {} #{command.join(' ')}"
+                            else
+                              "cd /var/app/current && sudo -E -u webapp env PATH=$PATH #{command.join(' ')}"
+                            end
+              out, err, status = runner.capture3 "eb", "ssh", env.environment_name, "-c", commandline
+
+              runner.stdout.print out
+              runner.stderr.print err
+
+              raise status.to_s unless status.success?
             end
-
-            commandline = if options[:docker]
-                            "sudo docker ps --filter=ancestor=aws_beanstalk/current-app --latest --format='{{.ID}}' | xargs -I{} sudo docker exec {} #{command.join(' ')}"
-                          else
-                            "cd /var/app/current && sudo -E -u webapp env PATH=$PATH #{command.join(' ')}"
-                          end
-            out, err, status = runner.capture3 "eb", "ssh", env.environment_name, "-c", commandline
-
-            runner.stdout.print out
-            runner.stderr.print err
-
-            raise status.to_s unless status.success?
           end
         ensure
           unless options[:keep]
