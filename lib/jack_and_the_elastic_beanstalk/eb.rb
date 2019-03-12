@@ -146,7 +146,7 @@ module JackAndTheElasticBeanstalk
         yield if block_given?
 
         start = Time.now
-        wait = 1
+        wait = 30
 
         while true
           refresh
@@ -168,7 +168,7 @@ module JackAndTheElasticBeanstalk
           end
 
           sleep wait
-          wait = [wait*2, 30].min
+          wait = [wait*2, 120].min
         end
 
         logger.info("jeb::eb") { "Synchronized in #{(Time.now - start).to_i} seconds" }
